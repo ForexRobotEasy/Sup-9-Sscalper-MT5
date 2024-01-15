@@ -1,0 +1,115 @@
+
+// Forex Robot Easy Team
+// Developer's Site: forexroboteasy.com
+// Sup 9 Scalper MT5
+
+// Include necessary libraries
+#include <InrexEA.mqh>
+#include <Trade.mqh>
+#include <TickCalc.mqh>
+
+// Define constants
+#define TRADE_VOLUME 0.01
+#define STOP_LOSS 100
+#define TAKE_PROFIT 200
+#define MAX_TRADES_PER_DAY 500
+
+// Initialize database connection
+InrexEADB db('localhost', 'username', 'password', 'forex_db');
+
+// Initialize trade execution
+Trade trade;
+
+// Initialize tick calculator
+TickCalc tickCalc;
+
+// Main entry point of the program
+void OnTick()
+{
+    // Check if the number of trades for the day exceeds the maximum limit
+    if (trade.GetTotalTrades() >= MAX_TRADES_PER_DAY)
+    {
+        Print('Maximum number of trades per day reached. Trading halted.');
+        return;
+    }
+
+    // Get current XAUUSD market trend
+    double trend = db.GetMarketTrend('XAUUSD');
+
+    // Calculate tick value
+    double tickValue = tickCalc.CalculateTickValue('XAUUSD');
+
+    // Determine trade direction based on market trend
+    ENUM_ORDER_TYPE tradeType = (trend > 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+
+    // Place trade
+    trade.PlaceOrder('XAUUSD', TRADE_VOLUME, tradeType, STOP_LOSS, TAKE_PROFIT);
+
+    // Calculate trade result based on tick value
+    double tradeResult = TRADE_VOLUME * tickValue;
+
+    // Log trade result
+    db.LogTradeResult('XAUUSD', tradeResult);
+
+    // Print trade information
+    Print('Trade executed: Symbol=XAUUSD, Volume=', TRADE_VOLUME, ', TradeType=', tradeType, ', TradeResult=', tradeResult);
+}
+
+// Program initialization
+int OnInit()
+{
+    // Connect to the database
+    if (!db.Connect())
+    {
+        Print('Failed to connect to the database. Program terminated.');
+        return INIT_FAILED;
+    }
+
+    // Initialize trade execution
+    if (!trade.Init())
+    {
+        Print('Failed to initialize trade execution. Program terminated.');
+        return INIT_FAILED;
+    }
+
+    // Initialize tick calculator
+    if (!tickCalc.Init())
+    {
+        Print('Failed to initialize tick calculator. Program terminated.');
+        return INIT_FAILED;
+    }
+
+    // Program initialization successful
+    Print('Sup 9 Scalper MT5 initialized successfully.');
+    return INIT_SUCCEEDED;
+}
+
+// Program termination
+void OnDeinit(const int reason)
+{
+    // Disconnect from the database
+    db.Disconnect();
+
+    // Terminate trade execution
+    trade.Deinit();
+
+    // Terminate tick calculator
+    tickCalc.Deinit();
+
+    // Print program termination reason
+    Print('Sup 9 Scalper MT5 terminated. Reason:', reason);
+}
+
+// Program entry point
+void OnStart()
+{
+    // Start program execution
+    Print('Sup 9 Scalper MT5 started.');
+}
+
+// Program completion
+void OnStop()
+{
+    // Stop program execution
+    Print('Sup 9 Scalper MT5 stopped.');
+}
